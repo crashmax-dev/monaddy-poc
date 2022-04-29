@@ -1,4 +1,4 @@
-import './mixin'
+// import './mixin'
 
 class MonaddyNumber<T> {
   constructor(private data: T) {}
@@ -12,13 +12,33 @@ class MonaddyNumber<T> {
   }
 }
 
-class MonaddyString {}
+class MonaddyString<T> {
+  constructor(private data: T) {}
+}
 
-class MonaddyObject {}
+class MonaddyObject<T extends Object> {
+  constructor(public data: T) {}
 
-class MonaddyArray {}
+  add<T>(data: T): MonaddyObject<T> {
+    return new MonaddyObject<T>({
+      ...this.data,
+      ...data
+    })
+  }
 
-class MonaddyDate {}
+  remove(key: keyof T): MonaddyObject<T> {
+    delete this.data[key]
+    return new MonaddyObject<T>(this.data)
+  }
+}
+
+class MonaddyArray<T> {
+  constructor(private data: T) {}
+}
+
+class MonaddyDate<T> {
+  constructor(private data: T) {}
+}
 
 interface ModdyTrace {
   [key: symbol]: unknown
@@ -31,19 +51,33 @@ class Monaddy<T> {
   constructor(value: T) {
     this.value = value
     this.trace = {}
+  }
 
-    switch (typeof value) {
+  do<T extends number>(): MonaddyObject<T>
+  do<T extends string>(): MonaddyObject<T>
+  do<T extends Object>(): MonaddyObject<T>
+  do() {
+    switch (typeof this.value) {
       case 'number':
-        return new MonaddyNumber(value)
-      // case 'string':
+        return new MonaddyNumber<T>(this.value)
+      case 'string':
+        return new MonaddyString<T>(this.value)
+      case 'object':
+        return new MonaddyObject<T>(this.value)
     }
   }
 
   private addTrace(): void {}
 }
 
-const { value, trace } = new Monaddy('123')
-console.log(value, trace)
+const data = new Monaddy({ a: '1', b: 1 })
+  .do()
+  .add({ c: 3 })
+  .remove('c')
+console.log(data.data)
+
+// const { value, trace } = new Monaddy('123')
+// console.log(value, trace)
 
 // const { value, trace } = new Monaddy([1, 2, 3])
 //   .map((v) => v + 1)
